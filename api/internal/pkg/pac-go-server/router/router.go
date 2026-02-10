@@ -109,6 +109,8 @@ func CreateRouter() *gin.Engine {
 	authorized.DELETE("/services/:name", services.DeleteServiceHandler)
 	// Currently, for extending the service expiry
 	authorized.PUT("/services/:name/expiry", services.UpdateServiceExpiryRequest)
+	// Download kubeconfig for K8s services
+	authorized.GET("/services/:name/kubeconfig", services.GetServiceKubeconfig)
 
 	// quota related endpoints
 
