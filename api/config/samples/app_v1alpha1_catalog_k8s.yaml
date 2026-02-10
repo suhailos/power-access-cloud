@@ -1,0 +1,30 @@
+apiVersion: app.pac.io/v1alpha1
+kind: Catalog
+metadata:
+  labels:
+    app.kubernetes.io/name: catalog
+    app.kubernetes.io/instance: standard-k8s-cluster
+    app.kubernetes.io/part-of: pac
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: pac
+  name: standard-k8s-cluster
+spec:
+  type: K8S
+  capacity:
+    cpu: '4'
+    memory: 16
+  description: 'Standard Kubernetes cluster with 3 worker nodes'
+  expiry: 7
+  image_thumbnail_reference: 'https://sample-image/kubernetes-symbol-x256.png'
+  k8s:
+    crn: 'crn:v1:bluemix:public:power-iaas:us-south:a/<accountID>:<powerVSInstanceID>::'
+    cluster_type: standard
+    version: '1.28'
+    worker_count: 3
+    worker_flavor: 'bx2.4x16'
+    zone: 'us-south-1'
+    # Optional: VPC configuration
+    # vpc_id: '<vpcID>'
+    # subnet_id: '<subnetID>'
+
+# Made with Bob

@@ -123,6 +123,130 @@ func reconcileVMCatalog(ctx context.Context, scope *appscope.CatalogScope) error
 
 	scope.Logger.Info("Reconciled VM catalog", "name", scope.Catalog.Name)
 	return nil
+
+func reconcileK8sCatalog(ctx context.Context, scope *appscope.CatalogScope) error {
+	scope.Logger.Info("Starting K8s catalog reconciliation ...", "name", scope.Catalog.Name)
+
+	k8s := &scope.Catalog.Spec.K8s
+
+	// Validate cluster type
+	if k8s.ClusterType != "standard" && k8s.ClusterType != "openshift" {
+		return errors.Errorf("invalid cluster type: %s, must be 'standard' or 'openshift'", k8s.ClusterType)
+	}
+
+	// Validate worker count
+	if k8s.WorkerCount < 1 || k8s.WorkerCount > 10 {
+		return errors.Errorf("invalid worker count: %d, must be between 1 and 10", k8s.WorkerCount)
+	}
+
+	// Note: In production, you would validate:
+	// - Version is supported
+	// - Worker flavor exists
+	// - Zone is valid
+	// - VPC and subnet exist (if specified)
+
+	scope.Catalog.Status.Ready = true
+	scope.Catalog.Status.Message = "catalog ready to use"
+
+	scope.Logger.Info("Reconciled K8s catalog", "name", scope.Catalog.Name)
+	return nil
+}
+
+func reconcileAIXCatalog(ctx context.Context, scope *appscope.CatalogScope) error {
+	scope.Logger.Info("Starting AIX catalog reconciliation ...", "name", scope.Catalog.Name)
+
+	aix := &scope.Catalog.Spec.AIX
+
+	if err := util.ValidateVMCapacity(&scope.Catalog.Spec.Capacity, &aix.Capacity); err != nil {
+		return errors.Wrap(err, "error validating AIX vm capacity")
+	}
+
+	powerVSGUID, _, _, _ := util.ParsePowerVSCRN(aix.CRN)
+
+	powerVSInstance, err := scope.PlatformClient.GetResourceInstance(ctx, powerVSGUID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving powervs instance with id %s", powerVSGUID)
+	}
+	if *powerVSInstance.State != "active" {
+		return errors.Errorf("powervs instance not in active state, current state: %s", *powerVSInstance.State)
+	}
+
+	image, err := scope.PowerVSClient.GetImageByName(aix.Image)
+	if err != nil {
+		return err
+	}
+	if *image.State != "active" {
+		return errors.Errorf("AIX image '%s' not in active state, current state: %s", aix.Image, *image.State)
+	}
+
+	if aix.Network != "" {
+		if _, err = scope.PowerVSClient.GetNetworkByName(aix.Network); err != nil {
+			return err
+		}
+	}
+
+	if err = util.ValidateSysType(aix.SystemType); err != nil {
+		return err
+	}
+
+	if err = util.ValidateProcType(aix.ProcessorType); err != nil {
+		return err
+	}
+
+	scope.Catalog.Status.Ready = true
+	scope.Catalog.Status.Message = "catalog ready to use"
+
+	scope.Logger.Info("Reconciled AIX catalog", "name", scope.Catalog.Name)
+	return nil
+}
+
+func reconcileIBMiCatalog(ctx context.Context, scope *appscope.CatalogScope) error {
+	scope.Logger.Info("Starting IBMi catalog reconciliation ...", "name", scope.Catalog.Name)
+
+	ibmi := &scope.Catalog.Spec.IBMi
+
+	if err := util.ValidateVMCapacity(&scope.Catalog.Spec.Capacity, &ibmi.Capacity); err != nil {
+		return errors.Wrap(err, "error validating IBMi vm capacity")
+	}
+
+	powerVSGUID, _, _, _ := util.ParsePowerVSCRN(ibmi.CRN)
+
+	powerVSInstance, err := scope.PlatformClient.GetResourceInstance(ctx, powerVSGUID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving powervs instance with id %s", powerVSGUID)
+	}
+	if *powerVSInstance.State != "active" {
+		return errors.Errorf("powervs instance not in active state, current state: %s", *powerVSInstance.State)
+	}
+
+	image, err := scope.PowerVSClient.GetImageByName(ibmi.Image)
+	if err != nil {
+		return err
+	}
+	if *image.State != "active" {
+		return errors.Errorf("IBMi image '%s' not in active state, current state: %s", ibmi.Image, *image.State)
+	}
+
+	if ibmi.Network != "" {
+		if _, err = scope.PowerVSClient.GetNetworkByName(ibmi.Network); err != nil {
+			return err
+		}
+	}
+
+	if err = util.ValidateSysType(ibmi.SystemType); err != nil {
+		return err
+	}
+
+	if err = util.ValidateProcType(ibmi.ProcessorType); err != nil {
+		return err
+	}
+
+	scope.Catalog.Status.Ready = true
+	scope.Catalog.Status.Message = "catalog ready to use"
+
+	scope.Logger.Info("Reconciled IBMi catalog", "name", scope.Catalog.Name)
+	return nil
+}
 }
 
 //+kubebuilder:rbac:groups=app.pac.io,resources=catalogs,verbs=get;list;watch;create;update;patch;delete
@@ -206,9 +330,27 @@ func (r *CatalogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			catalog.Status.Message = err.Error()
 			return ctrl.Result{}, errors.Wrap(err, "error reconciling vm catalog")
 		}
+	case appv1alpha1.CatalogTypeK8s:
+		if err = reconcileK8sCatalog(ctx, scope); err != nil {
+			catalog.Status.Ready = false
+			catalog.Status.Message = err.Error()
+			return ctrl.Result{}, errors.Wrap(err, "error reconciling k8s catalog")
+		}
+	case appv1alpha1.CatalogTypeAIX:
+		if err = reconcileAIXCatalog(ctx, scope); err != nil {
+			catalog.Status.Ready = false
+			catalog.Status.Message = err.Error()
+			return ctrl.Result{}, errors.Wrap(err, "error reconciling AIX catalog")
+		}
+	case appv1alpha1.CatalogTypeIBMi:
+		if err = reconcileIBMiCatalog(ctx, scope); err != nil {
+			catalog.Status.Ready = false
+			catalog.Status.Message = err.Error()
+			return ctrl.Result{}, errors.Wrap(err, "error reconciling IBMi catalog")
+		}
 	default:
 		catalog.Status.Ready = false
-		catalog.Status.Message = fmt.Sprintf("not able to idenitfy catalog type %s", catalog.Spec.Type)
+		catalog.Status.Message = fmt.Sprintf("not able to identify catalog type %s", catalog.Spec.Type)
 	}
 
 	l.Info("Reconciled catalog")

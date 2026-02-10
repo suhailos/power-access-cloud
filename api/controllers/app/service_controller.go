@@ -115,6 +115,12 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	switch catalog.Spec.Type {
 	case appv1alpha1.CatalogTypeVM:
 		svc = appservice.NewVM(scope)
+	case appv1alpha1.CatalogTypeK8s:
+		svc = appservice.NewK8s(scope)
+	case appv1alpha1.CatalogTypeAIX:
+		svc = appservice.NewAIX(scope)
+	case appv1alpha1.CatalogTypeIBMi:
+		svc = appservice.NewIBMi(scope)
 	default:
 		return ctrl.Result{}, errors.Errorf("unknown catalog type %s", catalog.Spec.Type)
 	}
@@ -192,8 +198,13 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if scope.Service.Status.State == appv1alpha1.ServiceStateInProgress {
-		l.Info("Service is in IN_PROGRESS state, requeuing after a min")
-		return ctrl.Result{RequeueAfter: time.Minute * 2}, nil
+		// K8s clusters take longer to provision, so use longer requeue interval
+		requeueAfter := time.Minute * 2
+		if catalog.Spec.Type == appv1alpha1.CatalogTypeK8s {
+			requeueAfter = time.Minute * 5
+		}
+		l.Info("Service is in IN_PROGRESS state, requeuing", "after", requeueAfter)
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
 	return ctrl.Result{}, nil

@@ -23,11 +23,20 @@ import (
 // CatalogTypeVM is VM catalog type
 const CatalogTypeVM CatalogType = "VM"
 
+// CatalogTypeK8s is K8s catalog type
+const CatalogTypeK8s CatalogType = "K8S"
+
+// CatalogTypeAIX is AIX catalog type
+const CatalogTypeAIX CatalogType = "AIX"
+
+// CatalogTypeIBMi is IBMi catalog type
+const CatalogTypeIBMi CatalogType = "IBMi"
+
 // CatalogFinalizer is Catalog's finalizer
 const CatalogFinalizer = "catalogs.pac.io/finalizer"
 
 // CatalogType is type of catalog
-// +kubebuilder:validation:Enum="VM"
+// +kubebuilder:validation:Enum="VM";"K8S";"AIX";"IBMi"
 type CatalogType string
 
 type Capacity struct {
@@ -52,7 +61,13 @@ type CatalogSpec struct {
 	// +kubebuilder:validation:Pattern=`^https?:\/\/.+$`
 	ImageThumbnailReference string `json:"image_thumbnail_reference"`
 	// +optional
-	VM VMCatalog `json:"vm"`
+	VM VMCatalog `json:"vm,omitempty"`
+	// +optional
+	K8s K8sCatalog `json:"k8s,omitempty"`
+	// +optional
+	AIX AIXCatalog `json:"aix,omitempty"`
+	// +optional
+	IBMi IBMiCatalog `json:"ibmi,omitempty"`
 }
 
 // CatalogStatus defines the observed state of Catalog
@@ -74,6 +89,60 @@ type VMCatalog struct {
 	Network string `json:"network"`
 	// +optional
 	Capacity Capacity `json:"capacity"`
+}
+
+type K8sCatalog struct {
+	// +kubebuilder:validation:Required
+	CRN string `json:"crn"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=standard;openshift
+	ClusterType string `json:"cluster_type"`
+	// +kubebuilder:validation:Required
+	Version string `json:"version"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=10
+	WorkerCount int `json:"worker_count"`
+	// +kubebuilder:validation:Required
+	WorkerFlavor string `json:"worker_flavor"`
+	// +kubebuilder:validation:Required
+	Zone string `json:"zone"`
+	// +optional
+	VpcID string `json:"vpc_id,omitempty"`
+	// +optional
+	SubnetID string `json:"subnet_id,omitempty"`
+}
+
+type AIXCatalog struct {
+	// +kubebuilder:validation:Required
+	CRN string `json:"crn"`
+	// +kubebuilder:validation:Required
+	ProcessorType string `json:"processor_type"`
+	// +kubebuilder:validation:Required
+	SystemType string `json:"system_type"`
+	// +kubebuilder:validation:Required
+	Image string `json:"image"`
+	// +optional
+	Network string `json:"network"`
+	// +optional
+	Capacity Capacity `json:"capacity"`
+}
+
+type IBMiCatalog struct {
+	// +kubebuilder:validation:Required
+	CRN string `json:"crn"`
+	// +kubebuilder:validation:Required
+	ProcessorType string `json:"processor_type"`
+	// +kubebuilder:validation:Required
+	SystemType string `json:"system_type"`
+	// +kubebuilder:validation:Required
+	Image string `json:"image"`
+	// +optional
+	Network string `json:"network"`
+	// +optional
+	Capacity Capacity `json:"capacity"`
+	// +optional
+	LicenseRepository string `json:"license_repository,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -21,6 +21,7 @@ import (
 
 	"github.com/IBM/power-access-cloud/api/apis/app/v1alpha1"
 	"github.com/IBM/power-access-cloud/api/controllers/util"
+	"github.com/IBM/power-access-cloud/api/internal/pkg/client/kubernetes"
 	"github.com/IBM/power-access-cloud/api/internal/pkg/client/platform"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -46,6 +47,7 @@ type ControllerScope struct {
 	Catalog        *v1alpha1.Catalog
 	PowerVSClient  *powervs.Client
 	PlatformClient *platform.Client
+	K8sClient      *kubernetes.Client
 }
 
 type CatalogScopeParams struct {
@@ -76,24 +78,57 @@ func NewControllerScope(ctx context.Context, params ControllerScopeParams) (*Con
 	}
 	scope.PlatformClient = platformClient
 
-	var cloudInstanceID, zone, accountID string
+	var cloudInstanceID, zone, accountID, region string
 	switch params.Catalog.Spec.Type {
 	case v1alpha1.CatalogTypeVM:
 		cloudInstanceID, zone, accountID, err = util.ParsePowerVSCRN(params.Catalog.Spec.VM.CRN)
 		if err != nil {
 			return scope, err
 		}
+	case v1alpha1.CatalogTypeAIX:
+		cloudInstanceID, zone, accountID, err = util.ParsePowerVSCRN(params.Catalog.Spec.AIX.CRN)
+		if err != nil {
+			return scope, err
+		}
+	case v1alpha1.CatalogTypeIBMi:
+		cloudInstanceID, zone, accountID, err = util.ParsePowerVSCRN(params.Catalog.Spec.IBMi.CRN)
+		if err != nil {
+			return scope, err
+		}
+	case v1alpha1.CatalogTypeK8s:
+		cloudInstanceID, zone, accountID, err = util.ParsePowerVSCRN(params.Catalog.Spec.K8s.CRN)
+		if err != nil {
+			return scope, err
+		}
+		region = params.Catalog.Spec.K8s.Zone
 	}
 
-	powerVSClient, err := powervs.NewClient(ctx, powervs.Options{
-		AccountID:       accountID,
-		CloudInstanceID: cloudInstanceID,
-		Zone:            zone,
-		Debug:           params.Debug})
-	if err != nil {
-		return scope, errors.Wrap(err, "failed to create powervs client")
+	// Initialize PowerVS client for VM-based catalogs (VM, AIX, IBMi)
+	if params.Catalog.Spec.Type == v1alpha1.CatalogTypeVM ||
+		params.Catalog.Spec.Type == v1alpha1.CatalogTypeAIX ||
+		params.Catalog.Spec.Type == v1alpha1.CatalogTypeIBMi {
+		powerVSClient, err := powervs.NewClient(ctx, powervs.Options{
+			AccountID:       accountID,
+			CloudInstanceID: cloudInstanceID,
+			Zone:            zone,
+			Debug:           params.Debug})
+		if err != nil {
+			return scope, errors.Wrap(err, "failed to create powervs client")
+		}
+		scope.PowerVSClient = powerVSClient
 	}
-	scope.PowerVSClient = powerVSClient
+
+	// Initialize K8s client for K8s catalogs
+	if params.Catalog.Spec.Type == v1alpha1.CatalogTypeK8s {
+		k8sClient, err := kubernetes.NewClient(kubernetes.Options{
+			AccountID: accountID,
+			Region:    region,
+		})
+		if err != nil {
+			return scope, errors.Wrap(err, "failed to create kubernetes client")
+		}
+		scope.K8sClient = k8sClient
+	}
 
 	if params.Debug {
 		core.SetLoggingLevel(core.LevelDebug)

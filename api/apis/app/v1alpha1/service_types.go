@@ -46,8 +46,60 @@ type VM struct {
 	State             string `json:"state,omitempty"`
 }
 
+// K8s has the detail of provisioned k8s cluster service
+type K8s struct {
+	ClusterID       string `json:"cluster_id,omitempty"`
+	ClusterName     string `json:"cluster_name,omitempty"`
+	IngressHostname string `json:"ingress_hostname,omitempty"`
+	State           string `json:"state,omitempty"`
+	MasterURL       string `json:"master_url,omitempty"`
+}
+
+// AIX has the detail of provisioned AIX vm service
+type AIX struct {
+	InstanceID        string `json:"instance_id,omitempty"`
+	IPAddress         string `json:"ip_address,omitempty"`
+	ExternalIPAddress string `json:"external_ip_address,omitempty"`
+	State             string `json:"state,omitempty"`
+	OSVersion         string `json:"os_version,omitempty"`
+}
+
+// IBMi has the detail of provisioned IBMi vm service
+type IBMi struct {
+	InstanceID        string `json:"instance_id,omitempty"`
+	IPAddress         string `json:"ip_address,omitempty"`
+	ExternalIPAddress string `json:"external_ip_address,omitempty"`
+	State             string `json:"state,omitempty"`
+	OSVersion         string `json:"os_version,omitempty"`
+	ConsoleURL        string `json:"console_url,omitempty"`
+}
+
 var VMAccessInfoTemplate = func(externalIP, internalIP string) string {
 	return fmt.Sprintf("VM can be accessed via ExternalIP: %s use any SSH pub key registered to SSH into the VM", externalIP)
+}
+
+var K8sAccessInfoTemplate = func(clusterID, masterURL, ingressHostname string) string {
+	return fmt.Sprintf(`Kubernetes Cluster Access:
+- Cluster ID: %s
+- Master URL: %s
+- Ingress: %s
+- Download kubeconfig: ibmcloud ks cluster config --cluster %s`, clusterID, masterURL, ingressHostname, clusterID)
+}
+
+var AIXAccessInfoTemplate = func(externalIP, internalIP, osVersion string) string {
+	return fmt.Sprintf(`AIX VM Access:
+- External IP: %s
+- Internal IP: %s
+- OS Version: %s
+- SSH: ssh root@%s (use registered SSH key)`, externalIP, internalIP, osVersion, externalIP)
+}
+
+var IBMiAccessInfoTemplate = func(externalIP, internalIP, consoleURL string) string {
+	return fmt.Sprintf(`IBMi VM Access:
+- External IP: %s
+- Internal IP: %s
+- Console: %s
+- SSH: ssh qsecofr@%s (use registered SSH key)`, externalIP, internalIP, consoleURL, externalIP)
 }
 
 // ServiceSpec defines the desired state of Service
@@ -65,6 +117,12 @@ type ServiceSpec struct {
 type ServiceStatus struct {
 	// +kubebuilder:validation:Optional
 	VM VM `json:"vm,omitempty"`
+	// +kubebuilder:validation:Optional
+	K8s K8s `json:"k8s,omitempty"`
+	// +kubebuilder:validation:Optional
+	AIX AIX `json:"aix,omitempty"`
+	// +kubebuilder:validation:Optional
+	IBMi IBMi `json:"ibmi,omitempty"`
 	// +optional
 	AccessInfo string `json:"accessInfo"`
 	// +kubebuilder:validation:Optional
@@ -110,4 +168,17 @@ func (s *ServiceStatus) SetSuccessful() {
 
 func (s *ServiceStatus) ClearVMStatus() {
 	s.VM = VM{}
+}
+
+
+func (s *ServiceStatus) ClearK8sStatus() {
+	s.K8s = K8s{}
+}
+
+func (s *ServiceStatus) ClearAIXStatus() {
+	s.AIX = AIX{}
+}
+
+func (s *ServiceStatus) ClearIBMiStatus() {
+	s.IBMi = IBMi{}
 }

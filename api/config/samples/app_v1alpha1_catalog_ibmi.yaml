@@ -1,0 +1,30 @@
+apiVersion: app.pac.io/v1alpha1
+kind: Catalog
+metadata:
+  labels:
+    app.kubernetes.io/name: catalog
+    app.kubernetes.io/instance: large-ibmi-vm
+    app.kubernetes.io/part-of: pac
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: pac
+  name: large-ibmi-vm
+spec:
+  type: IBMi
+  capacity:
+    cpu: '2'
+    memory: 32
+  description: 'Large size IBMi VM with IBMi 7.5'
+  expiry: 14
+  image_thumbnail_reference: 'https://sample-image/ibmi-symbol-x256.png'
+  ibmi:
+    crn: 'crn:v1:bluemix:public:power-iaas:lon06:a/<accountID>:<powerVSInstanceID>::'
+    image: 'IBMi-75-01'
+    network: '<sampleNetworkName>'
+    processor_type: dedicated
+    system_type: e980
+    capacity:
+      cpu: '2'
+      memory: 32
+    license_repository: 'ibmi-license-repo'
+
+# Made with Bob

@@ -1,0 +1,29 @@
+apiVersion: app.pac.io/v1alpha1
+kind: Catalog
+metadata:
+  labels:
+    app.kubernetes.io/name: catalog
+    app.kubernetes.io/instance: medium-aix-vm
+    app.kubernetes.io/part-of: pac
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: pac
+  name: medium-aix-vm
+spec:
+  type: AIX
+  capacity:
+    cpu: '1'
+    memory: 16
+  description: 'Medium size AIX VM with AIX 7.3'
+  expiry: 14
+  image_thumbnail_reference: 'https://sample-image/aix-symbol-x256.png'
+  aix:
+    crn: 'crn:v1:bluemix:public:power-iaas:lon06:a/<accountID>:<powerVSInstanceID>::'
+    image: 'AIX-7300-00-00'
+    network: '<sampleNetworkName>'
+    processor_type: dedicated
+    system_type: s922
+    capacity:
+      cpu: '1'
+      memory: 16
+
+# Made with Bob
