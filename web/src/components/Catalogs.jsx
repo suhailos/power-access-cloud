@@ -7,11 +7,13 @@ import {
   Button,
   Tile,
   InlineNotification,
-  Tooltip
+  Tooltip,
+  Tag
 } from "@carbon/react";
 import { MobileAdd, Information, CheckmarkFilled, WarningFilled} from "@carbon/icons-react";
 import { getAllCatalogs } from "../services/request";
 import DeployCatalog from "./PopUp/DeployCatalog";
+import { getCatalogTypeIcon, getCatalogTypeLabel, getCatalogCapacityLabel, getCatalogTypeColor } from "../utils/catalogTypes";
 
 import QuotaWarning from "./PopUp/QuotaWarning";
 import Notify from "./utils/Notify";
@@ -125,8 +127,13 @@ const Catalogs = () => {
           <Grid className="landing-page" fullWidth>
           {renderActionModals()}
           
-      {rows.map((row) => (
+      {rows.map((row) => {
+        const capacityInfo = getCatalogCapacityLabel(row);
+        const typeIcon = getCatalogTypeIcon(row.type);
+        const typeLabel = getCatalogTypeLabel(row.type);
+        const typeColor = getCatalogTypeColor(row.type);
         
+        return (
     <Column key={row.id}
         lg={4}
         md={4}
@@ -142,11 +149,16 @@ const Catalogs = () => {
 <WarningFilled style={{fill:"#FA4D56"}} />
       </Button>
 </Tooltip>}
-        <img src={row.image_thumbnail_reference} width="15%" height="auto" alt="centos" /><br/>
-      <strong><em>{row.name}</em></strong><br/><br/>
+        <img src={row.image_thumbnail_reference} width="15%" height="auto" alt={row.type} /><br/>
+      <strong><em>{row.name}</em></strong><br/>
+      <Tag type="blue" size="sm" style={{backgroundColor: typeColor, marginTop: "0.5rem"}}>{typeIcon}</Tag>
+      <Tag type="gray" size="sm" style={{marginTop: "0.5rem", marginLeft: "0.25rem"}}>{typeLabel}</Tag>
+      <br/><br/>
       
-vCPU: {row.capacity.cpu}<br/>
-Memory: {row.capacity.memory} GB<br/><br/>
+{capacityInfo.primary}<br/>
+{capacityInfo.secondary}<br/>
+{capacityInfo.version && <><small>Version: {capacityInfo.version}</small><br/></>}
+<br/>
 {/* {row.description}
 <br /><br /> */}
 <span style={{float:"right"}} >
@@ -161,7 +173,8 @@ Memory: {row.capacity.memory} GB<br/><br/>
 
    </Tile>
     </Column>
-    ))}
+    );
+      })}
       </Grid>
         </>
   );

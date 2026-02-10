@@ -14,6 +14,7 @@ import {
   TableToolbarSearch,
   TableSelectAll,
   DataTableSkeleton,
+  Tag,
 } from "@carbon/react";
 import { CalendarAddAlt, TrashCan } from "@carbon/icons-react";
 import { clientSearchFilter } from "../utils/Search";
@@ -24,6 +25,7 @@ import DeleteService from "./PopUp/DeleteService";
 import ServiceExtend from "./PopUp/ServiceExtend";
 import UserService from "../services/UserService";
 import Notify from "./utils/Notify";
+import { getCatalogTypeIcon, getCatalogTypeColor, formatServiceAccessInfo } from "../utils/catalogTypes";
 
 const BUTTON_REQUEST = "BUTTON_REQUEST";
 const BUTTON_EXTEND = "BUTTON_EXTEND";
@@ -46,6 +48,10 @@ const headers = [
   {
     key: "catalog_name",
     header: "Catalog",
+  },
+  {
+    key: "catalog_type",
+    header: "Type",
   },
   {
     key: "expiry",
@@ -219,14 +225,35 @@ const ServicesAdmin = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {rows.map((row) => (
-                        <TableRow key={row.id}>
-                          <TableSelectRow {...getSelectionProps({ row })} />
-                          {row.cells.map((cell) => (
-                            <TableCell key={cell.id}>{cell.value}</TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
+                      {rows.map((row) => {
+                        const serviceData = rows.find(r => r.id === row.id);
+                        return (
+                          <TableRow key={row.id}>
+                            <TableSelectRow {...getSelectionProps({ row })} />
+                            {row.cells.map((cell, index) => {
+                              // Check if this is the "catalog_type" column
+                              if (headers[index]?.key === 'catalog_type' && serviceData && cell.value) {
+                                const typeIcon = getCatalogTypeIcon(cell.value);
+                                const typeColor = getCatalogTypeColor(cell.value);
+                                return (
+                                  <TableCell key={cell.id}>
+                                    <Tag type="blue" size="sm" style={{backgroundColor: typeColor}}>
+                                      {typeIcon}
+                                    </Tag>
+                                  </TableCell>
+                                );
+                              }
+                              // Check if this is the "access_info" column - format it based on type
+                              if (headers[index]?.key === 'status.access_info' && serviceData) {
+                                const catalogType = serviceData.catalog_type || 'VM';
+                                const formattedInfo = formatServiceAccessInfo(cell.value, catalogType);
+                                return <TableCell key={cell.id}>{formattedInfo}</TableCell>;
+                              }
+                              return <TableCell key={cell.id}>{cell.value}</TableCell>;
+                            })}
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>

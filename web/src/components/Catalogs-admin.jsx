@@ -14,6 +14,7 @@ import {
   TableToolbarSearch,
   TableSelectAll,
   DataTableSkeleton,
+  Tag,
 } from "@carbon/react";
 import { MobileAdd, TrashCan, AlarmSubtract } from "@carbon/icons-react";
 import { clientSearchFilter } from "../utils/Search";
@@ -25,6 +26,7 @@ import DeleteCatalog from "./PopUp/DeleteCatalog";
 import RetireCatalog from "./PopUp/RetireCatalog";
 import UserService from "../services/UserService";
 import Notify from "./utils/Notify";
+import { getCatalogTypeLabel, getCatalogTypeIcon, getCatalogTypeColor } from "../utils/catalogTypes";
 
 const BUTTON_REQUEST = "BUTTON_REQUEST";
 const BUTTON_DELETE = "BUTTON_DELETE";
@@ -232,14 +234,31 @@ const CatalogsAdmin = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {rows.map((row) => (
-                        <TableRow key={row.id}>
-                          <TableSelectRow {...getSelectionProps({ row })} />
-                          {row.cells.map((cell) => (
-                            <TableCell key={cell.id}>{cell.value}</TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
+                      {rows.map((row) => {
+                        const catalogData = rows.find(r => r.id === row.id);
+                        return (
+                          <TableRow key={row.id}>
+                            <TableSelectRow {...getSelectionProps({ row })} />
+                            {row.cells.map((cell, index) => {
+                              // Check if this is the "type" column
+                              if (headers[index]?.key === 'type' && catalogData) {
+                                const typeIcon = getCatalogTypeIcon(cell.value);
+                                const typeLabel = getCatalogTypeLabel(cell.value);
+                                const typeColor = getCatalogTypeColor(cell.value);
+                                return (
+                                  <TableCell key={cell.id}>
+                                    <Tag type="blue" size="sm" style={{backgroundColor: typeColor}}>
+                                      {typeIcon}
+                                    </Tag>
+                                    <span style={{marginLeft: '0.5rem'}}>{typeLabel}</span>
+                                  </TableCell>
+                                );
+                              }
+                              return <TableCell key={cell.id}>{cell.value}</TableCell>;
+                            })}
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>

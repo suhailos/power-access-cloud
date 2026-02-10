@@ -23,6 +23,7 @@ import DeleteService from "./PopUp/DeleteService";
 import ServiceExtend from "./PopUp/ServiceExtend";
 import ServiceDetails from './PopUp/ServiceDetails';
 import Notify from "./utils/Notify";
+import { formatServiceAccessInfo } from "../utils/catalogTypes";
 const BUTTON_REQUEST = "BUTTON_REQUEST";
 const BUTTON_EXTEND = "BUTTON_EXTEND";
 const BUTTON_DETAILS = "BUTTON_DETAILS";
@@ -105,9 +106,8 @@ const ServicesForHome=({groups})=> {
       if(i.status.access_info===""){
         i.status.access_info="..."
       }else{
-        var begining=i.status.access_info.indexOf("ExternalIP:")
-        var end=i.status.access_info.indexOf("use any ")
-        i.status.access_info= i.status.access_info.slice(begining+12,end)
+        // Use the new formatServiceAccessInfo function to handle different service types
+        i.status.access_info = formatServiceAccessInfo(i.status.access_info, i.catalog_type);
       }
     })
     setServicesRows(data?.payload);
