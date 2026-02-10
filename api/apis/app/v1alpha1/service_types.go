@@ -46,8 +46,36 @@ type VM struct {
 	State             string `json:"state,omitempty"`
 }
 
+// K8sCluster has the detail of provisioned K8s cluster service
+type K8sCluster struct {
+	ClusterID      string   `json:"cluster_id,omitempty"`
+	MasterIPs      []string `json:"master_ips,omitempty"`
+	APIServerURL   string   `json:"api_server_url,omitempty"`
+	DashboardURL   string   `json:"dashboard_url,omitempty"`
+	State          string   `json:"state,omitempty"`
+	ReadyNodes     int      `json:"ready_nodes,omitempty"`
+	TotalNodes     int      `json:"total_nodes,omitempty"`
+	KubeVersion    string   `json:"kube_version,omitempty"`
+}
+
 var VMAccessInfoTemplate = func(externalIP, internalIP string) string {
 	return fmt.Sprintf("VM can be accessed via ExternalIP: %s use any SSH pub key registered to SSH into the VM", externalIP)
+}
+
+var K8sAccessInfoTemplate = func(apiServerURL, dashboardURL string, masterIPs []string) string {
+	masterIPsStr := ""
+	for i, ip := range masterIPs {
+		if i > 0 {
+			masterIPsStr += ", "
+		}
+		masterIPsStr += ip
+	}
+	info := fmt.Sprintf("Kubernetes cluster is ready!\n\nAPI Server: %s\nMaster Node(s): %s", apiServerURL, masterIPsStr)
+	if dashboardURL != "" {
+		info += fmt.Sprintf("\nDashboard: %s", dashboardURL)
+	}
+	info += "\n\nDownload kubeconfig from service details to access the cluster."
+	return info
 }
 
 // ServiceSpec defines the desired state of Service
@@ -65,6 +93,8 @@ type ServiceSpec struct {
 type ServiceStatus struct {
 	// +kubebuilder:validation:Optional
 	VM VM `json:"vm,omitempty"`
+	// +kubebuilder:validation:Optional
+	K8sCluster K8sCluster `json:"k8s_cluster,omitempty"`
 	// +optional
 	AccessInfo string `json:"accessInfo"`
 	// +kubebuilder:validation:Optional
@@ -110,4 +140,8 @@ func (s *ServiceStatus) SetSuccessful() {
 
 func (s *ServiceStatus) ClearVMStatus() {
 	s.VM = VM{}
+}
+
+func (s *ServiceStatus) ClearK8sClusterStatus() {
+	s.K8sCluster = K8sCluster{}
 }

@@ -23,11 +23,14 @@ import (
 // CatalogTypeVM is VM catalog type
 const CatalogTypeVM CatalogType = "VM"
 
+// CatalogTypeK8s is K8s catalog type
+const CatalogTypeK8s CatalogType = "K8s"
+
 // CatalogFinalizer is Catalog's finalizer
 const CatalogFinalizer = "catalogs.pac.io/finalizer"
 
 // CatalogType is type of catalog
-// +kubebuilder:validation:Enum="VM"
+// +kubebuilder:validation:Enum="VM";"K8s"
 type CatalogType string
 
 type Capacity struct {
@@ -53,6 +56,8 @@ type CatalogSpec struct {
 	ImageThumbnailReference string `json:"image_thumbnail_reference"`
 	// +optional
 	VM VMCatalog `json:"vm"`
+	// +optional
+	K8s K8sCatalog `json:"k8s"`
 }
 
 // CatalogStatus defines the observed state of Catalog
@@ -72,6 +77,38 @@ type VMCatalog struct {
 	Image string `json:"image"`
 	// +optional
 	Network string `json:"network"`
+	// +optional
+	Capacity Capacity `json:"capacity"`
+}
+
+type K8sCatalog struct {
+	// +kubebuilder:validation:Required
+	// CRN is the Cloud Resource Name for the infrastructure
+	CRN string `json:"crn"`
+	// +kubebuilder:validation:Required
+	// KubernetesVersion specifies the K8s version to deploy
+	KubernetesVersion string `json:"kubernetes_version"`
+	// +kubebuilder:validation:Required
+	// MasterCount specifies the number of master nodes
+	MasterCount int `json:"master_count"`
+	// +kubebuilder:validation:Required
+	// WorkerCount specifies the number of worker nodes
+	WorkerCount int `json:"worker_count"`
+	// +kubebuilder:validation:Required
+	// OSImage specifies the CentOS image to use
+	OSImage string `json:"os_image"`
+	// +optional
+	// Network specifies the network configuration
+	Network string `json:"network"`
+	// +optional
+	// PodNetworkCIDR specifies the pod network CIDR
+	PodNetworkCIDR string `json:"pod_network_cidr"`
+	// +optional
+	// ServiceCIDR specifies the service CIDR
+	ServiceCIDR string `json:"service_cidr"`
+	// +optional
+	// CNIPlugin specifies the CNI plugin (calico, flannel, weave)
+	CNIPlugin string `json:"cni_plugin"`
 	// +optional
 	Capacity Capacity `json:"capacity"`
 }
