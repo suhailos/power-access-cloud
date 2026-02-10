@@ -263,6 +263,23 @@ func convertToCatalog(catalogItem pac.Catalog) models.Catalog {
 				CPU:    cpu,
 			},
 		}
+	case pac.CatalogTypeK8s:
+		cpu, _ := utils.CastStrToFloat(catalogItem.Spec.K8s.Capacity.CPU)
+		catalog.K8s = models.K8s{
+			CRN:               catalogItem.Spec.K8s.CRN,
+			KubernetesVersion: catalogItem.Spec.K8s.KubernetesVersion,
+			MasterCount:       catalogItem.Spec.K8s.MasterCount,
+			WorkerCount:       catalogItem.Spec.K8s.WorkerCount,
+			OSImage:           catalogItem.Spec.K8s.OSImage,
+			Network:           catalogItem.Spec.K8s.Network,
+			PodNetworkCIDR:    catalogItem.Spec.K8s.PodNetworkCIDR,
+			ServiceCIDR:       catalogItem.Spec.K8s.ServiceCIDR,
+			CNIPlugin:         catalogItem.Spec.K8s.CNIPlugin,
+			Capacity: models.Capacity{
+				Memory: catalogItem.Spec.Capacity.Memory,
+				CPU:    cpu,
+			},
+		}
 	}
 	cpu, _ := utils.CastStrToFloat(catalogItem.Spec.Capacity.CPU)
 	catalog.Capacity.CPU = cpu
@@ -283,8 +300,8 @@ func validateCreateCatalogParams(catalog models.Catalog) []error {
 		errs = append(errs, errors.New("catalog type should be set"))
 	}
 	//TODO: Consider having helper functions to get supported catalog types
-	if catalog.Type != string(pac.CatalogTypeVM) {
-		errs = append(errs, fmt.Errorf("invalid catalog type %s, only valid catalog is %v", catalog.Type, pac.CatalogTypeVM))
+	if catalog.Type != string(pac.CatalogTypeVM) && catalog.Type != string(pac.CatalogTypeK8s) {
+		errs = append(errs, fmt.Errorf("invalid catalog type %s, valid catalogs are %v and %v", catalog.Type, pac.CatalogTypeVM, pac.CatalogTypeK8s))
 	}
 	if catalog.Name == "" {
 		errs = append(errs, errors.New("catalog name should be set"))
@@ -319,6 +336,29 @@ func validateCreateCatalogParams(catalog models.Catalog) []error {
 		if vm.Capacity.Memory == 0 {
 			errs = append(errs, errors.New("for catalog type VM memory capacity should be set"))
 		}
+	case string(pac.CatalogTypeK8s):
+		k8s := catalog.K8s
+		if k8s.CRN == "" {
+			errs = append(errs, errors.New("for catalog type K8s crn should be set"))
+		}
+		if k8s.KubernetesVersion == "" {
+			errs = append(errs, errors.New("for catalog type K8s kubernetes_version should be set"))
+		}
+		if k8s.MasterCount <= 0 {
+			errs = append(errs, errors.New("for catalog type K8s master_count should be greater than 0"))
+		}
+		if k8s.WorkerCount < 0 {
+			errs = append(errs, errors.New("for catalog type K8s worker_count should be 0 or greater"))
+		}
+		if k8s.OSImage == "" {
+			errs = append(errs, errors.New("for catalog type K8s os_image should be set"))
+		}
+		if k8s.Capacity.CPU == 0 {
+			errs = append(errs, errors.New("for catalog type K8s cpu capacity should be set"))
+		}
+		if k8s.Capacity.Memory == 0 {
+			errs = append(errs, errors.New("for catalog type K8s memory capacity should be set"))
+		}
 	}
 	return errs
 }
@@ -351,6 +391,22 @@ func createCatalogObject(catalog models.Catalog) pac.Catalog {
 			Capacity: pac.Capacity{
 				CPU:    utils.CastFloatToStr(catalog.VM.Capacity.CPU),
 				Memory: catalog.VM.Capacity.Memory,
+			},
+		}
+	case string(pac.CatalogTypeK8s):
+		catalogItem.Spec.K8s = pac.K8sCatalog{
+			CRN:               catalog.K8s.CRN,
+			KubernetesVersion: catalog.K8s.KubernetesVersion,
+			MasterCount:       catalog.K8s.MasterCount,
+			WorkerCount:       catalog.K8s.WorkerCount,
+			OSImage:           catalog.K8s.OSImage,
+			Network:           catalog.K8s.Network,
+			PodNetworkCIDR:    catalog.K8s.PodNetworkCIDR,
+			ServiceCIDR:       catalog.K8s.ServiceCIDR,
+			CNIPlugin:         catalog.K8s.CNIPlugin,
+			Capacity: pac.Capacity{
+				CPU:    utils.CastFloatToStr(catalog.K8s.Capacity.CPU),
+				Memory: catalog.K8s.Capacity.Memory,
 			},
 		}
 	}

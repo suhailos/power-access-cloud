@@ -10,6 +10,7 @@ type Catalog struct {
 	Expiry                  int           `json:"expiry"`
 	ImageThumbnailReference string        `json:"image_thumbnail_reference"`
 	VM                      VM            `json:"vm"`
+	K8s                     K8s           `json:"k8s"`
 	Status                  CatalogStatus `json:"status"`
 }
 
@@ -25,4 +26,17 @@ type VM struct {
 	Image         string   `json:"image"`
 	Network       string   `json:"network"`
 	Capacity      Capacity `json:"capacity"`
+}
+
+type K8s struct {
+	CRN               string   `json:"crn"`
+	KubernetesVersion string   `json:"kubernetes_version"`
+	MasterCount       int      `json:"master_count"`
+	WorkerCount       int      `json:"worker_count"`
+	OSImage           string   `json:"os_image"`
+	Network           string   `json:"network"`
+	PodNetworkCIDR    string   `json:"pod_network_cidr"`
+	ServiceCIDR       string   `json:"service_cidr"`
+	CNIPlugin         string   `json:"cni_plugin"`
+	Capacity          Capacity `json:"capacity"`
 }
