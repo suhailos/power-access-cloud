@@ -115,6 +115,8 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	switch catalog.Spec.Type {
 	case appv1alpha1.CatalogTypeVM:
 		svc = appservice.NewVM(scope)
+	case appv1alpha1.CatalogTypeK8s:
+		svc = appservice.NewK8sService(scope, l)
 	default:
 		return ctrl.Result{}, errors.Errorf("unknown catalog type %s", catalog.Spec.Type)
 	}
