@@ -1,0 +1,57 @@
+apiVersion: app.pac.io/v1alpha1
+kind: Catalog
+metadata:
+  name: k8s-dev-cluster
+  namespace: default
+spec:
+  type: K8s
+  description: "Development Kubernetes cluster on CentOS"
+  capacity:
+    cpu: "8"
+    memory: 16384
+  retired: false
+  expiry: 7
+  image_thumbnail_reference: "https://kubernetes.io/images/kubernetes-horizontal-color.png"
+  k8s:
+    crn: "crn:v1:bluemix:public:power-iaas:us-south:a/1234567890:instance-id::"
+    kubernetes_version: "1.28"
+    master_count: 1
+    worker_count: 2
+    os_image: "CentOS-Stream-8"
+    network: "pac-network"
+    pod_network_cidr: "10.244.0.0/16"
+    service_cidr: "10.96.0.0/12"
+    cni_plugin: "calico"
+    capacity:
+      cpu: "4"
+      memory: 8192
+---
+apiVersion: app.pac.io/v1alpha1
+kind: Catalog
+metadata:
+  name: k8s-prod-cluster
+  namespace: default
+spec:
+  type: K8s
+  description: "Production Kubernetes cluster with HA masters"
+  capacity:
+    cpu: "24"
+    memory: 49152
+  retired: false
+  expiry: 30
+  image_thumbnail_reference: "https://kubernetes.io/images/kubernetes-horizontal-color.png"
+  k8s:
+    crn: "crn:v1:bluemix:public:power-iaas:us-south:a/1234567890:instance-id::"
+    kubernetes_version: "1.28"
+    master_count: 3
+    worker_count: 5
+    os_image: "CentOS-Stream-8"
+    network: "pac-network"
+    pod_network_cidr: "10.244.0.0/16"
+    service_cidr: "10.96.0.0/12"
+    cni_plugin: "calico"
+    capacity:
+      cpu: "8"
+      memory: 16384
+
+# Made with Bob
